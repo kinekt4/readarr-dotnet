@@ -1,0 +1,5 @@
+#!/bin/bash -e
+
+CHECK_URL="https://readarr.servarr.com/v1/update/develop/changes"
+
+curl -s "$CHECK_URL?os=linux&runtime=netcore&arch=x64" | jq -r .[0].version
