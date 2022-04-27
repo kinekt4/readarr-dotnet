@@ -1,0 +1,3 @@
+#!/bin/bash -xe
+
+"$SNAP/readarr-dotnet/Readarr" -nobrowser -data="$SNAP_COMMON"

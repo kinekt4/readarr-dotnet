@@ -1,0 +1,81 @@
+name: readarr-dotnet # you probably want to 'snapcraft register <name>'
+summary: Readarr is an ebook and audiobook collection manager. # 79 char long summary
+description: |
+  Readarr is an ebook and audiobook collection manager for Usenet and BitTorrent users. 
+  It can monitor multiple RSS feeds for new books from your favorite authors 
+  and will grab, sort, and rename them. 
+  Note that only one type of a given book is supported. 
+  If you want both an audiobook and ebook of a given book you will need 
+  multiple instances.
+
+  The web interface is accessible by default at http://localhost:8787
+
+confinement: strict # use 'strict' once you have the right plugs and slots
+license: GPL-3.0+
+icon: icon.svg
+base: core20
+grade: stable
+adopt-info: set-version
+
+package-repositories:
+  - type: apt
+    url: https://packages.microsoft.com/ubuntu/20.04/prod
+    components: [main]
+    suites: [focal]
+    key-id: BC528686B50D79E339D3721CEB3E94ADBE1229CF
+
+apps:
+  readarr:
+    command: bin/run-readarr
+    daemon: simple
+    plugs:
+      - home
+      - mount-observe
+      - network
+      - network-bind
+      - removable-media
+    stop-timeout: 30s
+
+parts:
+
+  local:
+    plugin: dump
+    source: snap/local
+
+  set-version:
+    plugin: nil
+    override-pull:
+      curl -sLG "https://readarr.servarr.com/v1/update/develop/changes?os=linux&runtime=netcore&arch=x64" --output changes.json
+    override-build: |
+      snapcraftctl set-version "$(jq -r .[0].version changes.json)"
+    build-packages:
+      - curl
+      - jq
+
+  readarr:
+    plugin: nil
+    source: 'https://readarr.servarr.com/v1/update/develop/updatefile?os=linux&runtime=netcore&arch=x64'
+    source-type: tar
+    override-build: |
+      INST_DIR="$SNAPCRAFT_PART_INSTALL/readarr-dotnet"
+      mkdir -p "$INST_DIR"
+      cp -a * "$INST_DIR"
+
+  deps:
+    plugin: dump
+    source: .
+    stage-packages:
+      - curl
+      - mediainfo
+      - sqlite3
+      - apt-transport-https
+      - dotnet-sdk-6.0
+    filesets:
+      bins:
+        - usr/bin/sqlite*
+      libs:
+        - usr/lib
+    stage:
+      - $bins
+      - $libs
+
